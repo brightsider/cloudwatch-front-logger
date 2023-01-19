@@ -80,6 +80,20 @@ describe('Collecting errors', (): void => {
     ]);
   });
 
+  it('should receive from console with args', async (): Promise<void> => {
+    await globalConsole.error({ a: 1 }, { b: 2 }, ['a'], 'b');
+    expect((logger as any).events).toStrictEqual([
+      {
+        message: JSON.stringify({
+          message: '{"a":1} {"b":2} ["a"] b',
+          type: 'console',
+          level: 'error',
+        }),
+        timestamp: 0,
+      },
+    ]);
+  });
+
   it('should receive from custom trigger', async (): Promise<void> => {
     await logger.onError(new Error('Something went wrong'), { type: 'custom' });
     expect((logger as any).events).toStrictEqual([

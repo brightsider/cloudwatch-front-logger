@@ -136,16 +136,12 @@ export default class Logger {
       originalConsole[level] = globalConsole[level].bind(globalConsole);
       globalConsole[level] = async (message, ...args): Promise<void> => {
         // Listen overridden console.*() function calls (type="console", level="*")
-        await this.onError(
-          new Error(
-            typeof message === 'object' ? JSON.stringify(message) : message
-          ),
-          {
-            type: 'console',
-            level,
-            args,
-          }
-        );
+        await this.onError(new Error(message), {
+          type: 'console',
+          level,
+          args,
+          originalMessage: message,
+        });
         if (!this.muting) {
           originalConsole[level](message, ...args);
         }
@@ -180,10 +176,12 @@ export default class Logger {
     if (this.messageFormatter) {
       message = await this.messageFormatter(e, info); // Custom formatter
     } else {
-      const { args, ...otherInfo } = info ?? {};
+      const { args, originalMessage, ...otherInfo } = info ?? {};
       const converToString = (value: any) =>
-        typeof value === 'object' ? JSON.stringify(value) : value;
-      let msg = converToString(e.message);
+        !(value instanceof Error) && typeof value === 'object'
+          ? JSON.stringify(value)
+          : value;
+      let msg = converToString(originalMessage ?? e.message);
       if (args && Array.isArray(args)) {
         msg = [msg, ...args.map(converToString)].join(' ');
       }
